@@ -10,26 +10,26 @@ import torch
 from transformers import AutoModelForCausalLM, AutoTokenizer
 import re
 
-chatbot_model_name = "microsoft/DialoGPT-medium"
+# chatbot_model_name = "microsoft/DialoGPT-medium"
 
-# Load tokenizer
-chatbot_tokenizer = AutoTokenizer.from_pretrained(chatbot_model_name)
+# # Load tokenizer
+# chatbot_tokenizer = AutoTokenizer.from_pretrained(chatbot_model_name)
 
-# Load model with specific parameters to avoid the error
-chatbot_model = AutoModelForCausalLM.from_pretrained(
-    chatbot_model_name,
-    device_map="auto",  # Automatically decide device placement
-    low_cpu_mem_usage=True,  # Optimize memory usage
-    # Add this if you still encounter issues
-    torch_dtype="auto"  # Use automatic type detection
-)
+# # Load model with specific parameters to avoid the error
+# chatbot_model = AutoModelForCausalLM.from_pretrained(
+#     chatbot_model_name,
+#     device_map="auto",  # Automatically decide device placement
+#     low_cpu_mem_usage=True,  # Optimize memory usage
+#     # Add this if you still encounter issues
+#     torch_dtype="auto"  # Use automatic type detection
+# )
 
-def generate_chat_response(user_input, chat_history_ids=None):
-    new_user_input_ids = chatbot_tokenizer.encode(user_input + chatbot_tokenizer.eos_token, return_tensors="pt")
-    bot_input_ids = new_user_input_ids if chat_history_ids is None else torch.cat([chat_history_ids, new_user_input_ids], dim=-1)
-    chat_history_ids = chatbot_model.generate(bot_input_ids, max_length=1000, pad_token_id=chatbot_tokenizer.eos_token_id)
-    output = chatbot_tokenizer.decode(chat_history_ids[:, bot_input_ids.shape[-1]:][0], skip_special_tokens=True)
-    return output, chat_history_ids
+# def generate_chat_response(user_input, chat_history_ids=None):
+#     new_user_input_ids = chatbot_tokenizer.encode(user_input + chatbot_tokenizer.eos_token, return_tensors="pt")
+#     bot_input_ids = new_user_input_ids if chat_history_ids is None else torch.cat([chat_history_ids, new_user_input_ids], dim=-1)
+#     chat_history_ids = chatbot_model.generate(bot_input_ids, max_length=1000, pad_token_id=chatbot_tokenizer.eos_token_id)
+#     output = chatbot_tokenizer.decode(chat_history_ids[:, bot_input_ids.shape[-1]:][0], skip_special_tokens=True)
+#     return output, chat_history_ids
 
 load_dotenv()
 
@@ -179,12 +179,18 @@ def chat():
     if chat_history_ids:
         chat_history_ids = torch.tensor(chat_history_ids)
 
-    response, history_ids = generate_chat_response(user_message, chat_history_ids)
+    # response, history_ids = generate_chat_response(user_message, chat_history_ids)
+    response = client.models.generate_content(
+        model="gemini-2.0-flash",
+        contents=[{"role": "user", "parts": [{"text": user_message}]}]
+    )
+    if not response:
+        return jsonify({"error": "No response from the model"}), 500
     suggestion = generate_suggestion(user_message, response)
 
     return jsonify({
         "response": response,
-        "chat_history_ids": history_ids.tolist() if history_ids is not None else None,
+        "chat_history_ids": None,
         "suggestion": suggestion["text"] if suggestion else None,
         "suggestion_action": suggestion["action"] if suggestion else None
     })
