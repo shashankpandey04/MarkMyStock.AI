@@ -1,0 +1,804 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MarkMyStock.AI | Intelligent Financial Assistant</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/typed.js/2.0.16/typed.umd.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        'primary': '#10B981',
+                        'primary-dark': '#059669',
+                        'secondary': '#6366F1',
+                        'dark': '#121826',
+                        'dark-2': '#1D2839',
+                        'dark-3': '#2A3749',
+                        'light-text': '#94A3B8',
+                    },
+                    animation: {
+                        'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                    },
+                    keyframes: {
+                        shimmer: {
+                            '0%': { backgroundPosition: '-200% 0' },
+                            '100%': { backgroundPosition: '200% 0' },
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        @keyframes float {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+            100% { transform: translateY(0px); }
+        }
+        
+        .float {
+            animation: float 6s ease-in-out infinite;
+        }
+        
+        .loading-dots:after {
+            content: '.';
+            animation: dots 1.5s steps(5, end) infinite;
+        }
+        
+        @keyframes dots {
+            0%, 20% { content: '.'; }
+            40% { content: '..'; }
+            60% { content: '...'; }
+            80%, 100% { content: ''; }
+        }
+        
+        .gradient-bg {
+            background: linear-gradient(135deg, #1D2839 0%, #121826 100%);
+        }
+        
+        .shine {
+            background: linear-gradient(90deg, 
+                rgba(255, 255, 255, 0) 0%, 
+                rgba(255, 255, 255, 0.03) 50%, 
+                rgba(255, 255, 255, 0) 100%);
+            background-size: 200% 100%;
+            animation: shimmer 3s infinite;
+        }
+        
+        .typing-indicator span {
+            animation: blink 1.4s infinite;
+            animation-fill-mode: both;
+            height: 10px;
+            width: 10px;
+            border-radius: 50%;
+            background-color: #10B981;
+            display: inline-block;
+            margin: 0 1px;
+        }
+        
+        .typing-indicator span:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+        
+        .typing-indicator span:nth-child(3) {
+            animation-delay: 0.4s;
+        }
+        
+        @keyframes blink {
+            0% { opacity: 0.1; }
+            20% { opacity: 1; }
+            100% { opacity: 0.1; }
+        }
+        
+        .scrollbar-thin {
+            scrollbar-width: thin;
+        }
+        
+        .scrollbar-thin::-webkit-scrollbar {
+            width: 4px;
+        }
+        
+        .scrollbar-thin::-webkit-scrollbar-track {
+            background: rgba(255,255,255,0.05);
+            border-radius: 4px;
+        }
+        
+        .scrollbar-thin::-webkit-scrollbar-thumb {
+            background: rgba(255,255,255,0.2);
+            border-radius: 4px;
+        }
+        
+        .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+            background: rgba(255,255,255,0.3);
+        }
+        
+        .message-in {
+            animation: messageIn 0.3s ease forwards;
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        
+        @keyframes messageIn {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .glass-effect {
+            backdrop-filter: blur(8px);
+            background: rgba(29, 40, 57, 0.7);
+        }
+        
+        .slide-up {
+            animation: slideUp 0.3s ease forwards;
+        }
+        
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+    </style>
+</head>
+<body class="bg-dark text-white h-screen flex flex-col overflow-hidden">
+    <!-- Split View Layout -->
+    <div class="flex h-full overflow-hidden">
+        <!-- Sidebar -->
+        <div id="sidebar" class="w-64 bg-dark-2 border-r border-white/5 flex flex-col transform transition-transform duration-300 ease-in-out">
+            <!-- Logo Area -->
+            <div class="p-4 border-b border-white/5">
+                <div class="flex items-center space-x-2">
+                    <div class="w-8 h-8 bg-gradient-to-br from-primary to-secondary rounded-lg flex items-center justify-center">
+                        <svg class="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M13 7h-2v8h2V7zm2 12h-6v2h6v-2zm0-16h-6v2h6V3zm4.25 4.47l-1.42-1.42c-.31-.31-.86-.31-1.17 0L15.85 7.65c-.31.31-.31.86 0 1.17l1.42 1.42c.31.31.86.31 1.17 0l1.79-1.79c.31-.31.31-.86 0-1.17zM5.88 18.12c-.31-.31-.31-.86 0-1.17l1.42-1.42c.31-.31.86-.31 1.17 0l1.42 1.42c.31.31.31.86 0 1.17l-1.42 1.42c-.31.31-.86.31-1.17 0l-1.42-1.42z"></path>
+                        </svg>
+                    </div>
+                    <h1 class="text-lg font-bold tracking-tight">MarkMyStock.AI</h1>
+                </div>
+            </div>
+            
+            <!-- New Chat Button -->
+            <div class="p-4">
+                <button id="new-chat-btn" class="w-full bg-primary hover:bg-primary-dark text-white p-2 rounded-lg flex items-center justify-center space-x-2 transition-colors duration-200">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                    </svg>
+                    <span>New Chat</span>
+                </button>
+            </div>
+            
+            <!-- Chat History -->
+            <div class="flex-1 overflow-y-auto scrollbar-thin p-2">
+                <div class="text-xs uppercase text-light-text font-semibold tracking-wider mb-2 px-2"></div>
+            </div>
+            
+            <!-- User Menu -->
+            <div class="p-3 border-t border-white/5">
+                <div class="flex items-center space-x-3 p-2">
+                    <div class="w-8 h-8 rounded-full bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center text-white font-semibold">
+                        U
+                    </div>
+                    <div class="flex-1">
+                        <p class="text-sm font-medium">{{ current_user.id }}</p>
+                        <p class="text-xs text-light-text">Free Plan</p>
+                    </div>
+                    <button id="logout-btn" class="p-1.5 hover:bg-dark-3 rounded-md">
+                        <svg class="w-4 h-4 text-light-text" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Content Area -->
+        <div class="flex-1 flex flex-col relative">
+            <!-- Toggle Sidebar Button (Mobile) -->
+            <button id="toggle-sidebar" class="md:hidden absolute top-4 left-4 z-50 p-2 bg-dark-3 rounded-lg">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+                </svg>
+            </button>
+            
+            <!-- Chat Messages Area -->
+            <div id="chat-container" class="flex-1 overflow-y-auto scrollbar-thin p-4 md:py-6 gradient-bg">
+                <div class="max-w-4xl mx-auto space-y-6">
+                    <!-- Welcome Message -->
+                    <div class="message-container message-in" data-delay="0">
+                        <div class="flex space-x-4">
+                            <div class="w-9 h-9 rounded-full bg-gradient-to-br from-primary to-primary-dark flex items-center justify-center shine">
+                                <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 3.104v5.714a2.252 2.252 0 01-.659 1.591L5 14.5M9.75 3.104c-.251.023-.501.05-.75.082m.75-.082a24.301 24.301 0 014.5 0m0 0v5.714c0 .597.237 1.17.659 1.591L19.8 15.3M14.25 3.104c.251.023.501.05.75.082M19.8 15.3l-1.57.393A9.065 9.065 0 0112 15a9.065 9.065 0 00-6.23-.693L5 14.5m14.8.8l1.402 1.402c1.232 1.232.65 3.318-1.067 3.611A48.309 48.309 0 0112 21c-2.773 0-5.491-.235-8.135-.687-1.718-.293-2.3-2.379-1.067-3.61L5 14.5"></path>
+                                </svg>
+                            </div>
+                            <div class="flex-1">
+                                <div class="bg-dark-2 p-4 rounded-2xl rounded-tl-none shadow-lg border border-white/5">
+                                    <div id="welcome-message">
+                                        <p class="text-white">👋 Welcome to MarkMyStock.AI! I can help with:</p>
+                                        <ul class="mt-2 space-y-2">
+                                            <li class="flex items-center space-x-2">
+                                                <span class="text-primary">•</span>
+                                                <span>Real-time stock market insights</span>
+                                            </li>
+                                            <li class="flex items-center space-x-2">
+                                                <span class="text-primary">•</span>
+                                                <span>Investment advice & strategies</span>
+                                            </li>
+                                            <li class="flex items-center space-x-2">
+                                                <span class="text-primary">•</span>
+                                                <span>Financial planning questions</span>
+                                            </li>
+                                            <li class="flex items-center space-x-2">
+                                                <span class="text-primary">•</span>
+                                                <span>General conversation</span>
+                                            </li>
+                                        </ul>
+                                        <p class="mt-3">What would you like to know today?</p>
+                                    </div>
+                                </div>
+                                
+                                <!-- Suggestion Chips -->
+                                <div class="mt-3 flex flex-wrap gap-2 slide-up" style="animation-delay: 0.3s">
+                                    <button class="suggestion-chip bg-dark-3 hover:bg-dark-2 text-light-text hover:text-white px-3 py-1.5 rounded-full text-sm transition-all duration-200 border border-white/10">
+                                        Show me Apple stock
+                                    </button>
+                                    <button class="suggestion-chip bg-dark-3 hover:bg-dark-2 text-light-text hover:text-white px-3 py-1.5 rounded-full text-sm transition-all duration-200 border border-white/10">
+                                        Investment strategies
+                                    </button>
+                                    <button class="suggestion-chip bg-dark-3 hover:bg-dark-2 text-light-text hover:text-white px-3 py-1.5 rounded-full text-sm transition-all duration-200 border border-white/10">
+                                        How's the market today?
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Input Area -->
+            <div class="border-t border-white/5 p-4 relative">
+                <div class="max-w-4xl mx-auto">
+                    <div class="relative">
+                        <div class="absolute inset-0 bg-dark-3 rounded-xl opacity-50 blur-xl"></div>
+                        <div class="relative bg-dark-3 rounded-xl border border-white/10 shadow-lg overflow-hidden">
+                            <textarea 
+                                id="message-input" 
+                                placeholder="Ask me anything about stocks, investments, or chat with me..."
+                                class="w-full px-4 py-3 bg-transparent text-white placeholder-light-text focus:outline-none resize-none min-h-[50px] max-h-32 scrollbar-thin"
+                                rows="1"
+                            ></textarea>
+                            
+                            <div class="flex items-center px-3 py-2 border-t border-white/5">
+                                <button class="p-1.5 text-light-text hover:text-white rounded-lg hover:bg-white/5 transition-colors">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"></path>
+                                    </svg>
+                                </button>
+                                <div class="flex-1"></div>
+                                <button 
+                                    id="send-btn" 
+                                    class="bg-primary hover:bg-primary-dark text-white rounded-lg px-4 py-1.5 flex items-center space-x-2 transition-colors"
+                                >
+                                    <span>Send</span>
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path>
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="text-xs text-center text-light-text mt-2">
+                        MarkMyStock.AI may produce inaccurate information about people, places, facts, or market data. © 2025 MarkMyStock Corp.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Global state
+        let chatHistory = [];
+        let isTyping = false;
+        let currentSuggestion = null;
+        
+        // DOM Elements
+        const chatContainer = document.getElementById('chat-container');
+        const messageInput = document.getElementById('message-input');
+        const sendBtn = document.getElementById('send-btn');
+        const toggleSidebarBtn = document.getElementById('toggle-sidebar');
+        const sidebar = document.getElementById('sidebar');
+        const logoutBtn = document.getElementById('logout-btn');
+        const newChatBtn = document.getElementById('new-chat-btn');
+        
+        messageInput.addEventListener('input', function() {
+            this.style.height = 'auto';
+            this.style.height = (this.scrollHeight) + 'px';
+        });
+        
+        function showTypingIndicator() {
+            const messageDiv = document.createElement('div');
+            messageDiv.classList.add('message-container', 'message-in', 'typing-message');
+            messageDiv.dataset.delay = '0';
+            
+            messageDiv.innerHTML = `
+                <div class="flex space-x-4">
+                    <div class="w-9 h-9 rounded-full bg-gradient-to-br from-primary to-primary-dark flex items-center justify-center">
+                        <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 3.104v5.714a2.252 2.252 0 01-.659 1.591L5 14.5M9.75 3.104c-.251.023-.501.05-.75.082m.75-.082a24.301 24.301 0 014.5 0m0 0v5.714c0 .597.237 1.17.659 1.591L19.8 15.3M14.25 3.104c.251.023.501.05.75.082M19.8 15.3l-1.57.393A9.065 9.065 0 0112 15a9.065 9.065 0 00-6.23-.693L5 14.5m14.8.8l1.402 1.402c1.232 1.232.65 3.318-1.067 3.611A48.309 48.309 0 0112 21c-2.773 0-5.491-.235-8.135-.687-1.718-.293-2.3-2.379-1.067-3.61L5 14.5"></path>
+                        </svg>
+                    </div>
+                    <div class="flex-1">
+                        <div class="bg-dark-2 p-4 rounded-2xl rounded-tl-none shadow-lg border border-white/5 inline-flex">
+                            <div class="typing-indicator">
+                                <span></span>
+                                <span></span>
+                                <span></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            chatContainer.querySelector('.max-w-4xl').appendChild(messageDiv);
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+            
+            return messageDiv;
+        }
+        
+        // Function to remove the typing indicator
+        function removeTypingIndicator() {
+            const typingIndicator = chatContainer.querySelector('.typing-message');
+            if (typingIndicator) {
+                typingIndicator.remove();
+            }
+        }
+
+        function formatCodeBlocks(content) {
+            // Replace code blocks with properly formatted and highlighted code
+            if (content.includes('```')) {
+                const codeBlockRegex = /```(\w+)?\n([\s\S]*?)```/g;
+                return content.replace(codeBlockRegex, (match, language, code) => {
+                    language = language || 'plaintext';
+                    const highlightedCode = hljs.highlight(code, { language }).value;
+                    return `<div class="bg-[#282c34] rounded-md overflow-hidden mt-2 mb-2">
+                        <div class="flex items-center justify-between px-4 py-2 bg-[#21252b]">
+                            <span class="text-xs text-light-text">${language}</span>
+                            <button class="copy-btn text-xs text-light-text hover:text-white flex items-center space-x-1 p-1 rounded hover:bg-white/10">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"></path>
+                                </svg>
+                                <span>Copy</span>
+                            </button>
+                        </div>
+                        <div class="p-4 overflow-x-auto">
+                            <pre class="text-sm"><code>${highlightedCode}</code></pre>
+                        </div>
+                    </div>`;
+                });
+            }
+            return content;
+        }
+
+        // Function to create a stock card
+        function createStockCard(data) {
+            const isPositive = data.priceChange.percentage >= 0;
+            if (data.error) {
+                return `
+                <div class="bg-red-500/20 border border-red-500/50 p-4 rounded-lg text-white mb-3">
+                    <p class="flex items-center">
+                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+                        </svg>
+                        Error: ${data.error}
+                    </p>
+                </div>
+                `;
+            }
+            
+            return `
+            <div class="bg-dark-3 rounded-xl border border-white/10 shadow-lg overflow-hidden mb-4">
+                <div class="bg-gradient-to-r from-dark-2 to-dark-3 p-4">
+                    <div class="flex justify-between items-center">
+                        <div>
+                            <h2 class="text-xl font-bold text-white flex items-center">
+                                ${data.companyName} 
+                                <span class="ml-2 px-2 py-0.5 bg-white/10 text-xs rounded-md">${data.stockSymbol}</span>
+                            </h2>
+                            <p class="text-sm text-light-text">${data.exchange} • ${data.sector}</p>
+                        </div>
+                        <div class="text-right">
+                            <p class="text-2xl font-bold">$${data.currentPrice}</p>
+                            <p class="text-sm ${isPositive ? 'text-green-400' : 'text-red-400'} flex items-center justify-end">
+                                ${isPositive ? 
+                                    `<svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path>
+                                    </svg>` : 
+                                    `<svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 17h8m0 0v-8m0 8l-8-8-4 4-6-6"></path>
+                                    </svg>`
+                                }
+                                $${Math.abs(data.priceChange.amount)} (${data.priceChange.percentage}%)
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="p-4 grid grid-cols-1 md:grid-cols-3 gap-3">
+                    <div class="bg-dark-2 p-3 rounded-lg">
+                        <p class="text-xs text-light-text mb-1">52-Week Range</p>
+                        <div class="relative pt-3">
+                            <div class="w-full h-1 bg-dark-3 rounded-full overflow-hidden">
+                                <div class="h-full bg-gradient-to-r from-red-500 via-yellow-500 to-green-500"></div>
+                            </div>
+                            <div class="flex justify-between text-xs mt-1">
+                                <span>$${data.financialMetrics['52WeekLow']}</span>
+                                <span class="relative text-white px-1 rounded-sm" style="left: ${(data.currentPrice - data.financialMetrics['52WeekLow']) / (data.financialMetrics['52WeekHigh'] - data.financialMetrics['52WeekLow']) * 100}%">
+                                    <svg class="w-2 h-3 mb-0.5" fill="currentColor" viewBox="0 0 20 20">
+                                        <path d="M10 3a1 1 0 01.707.293l3 3a1 1 0 01-1.414 1.414L10 5.414 7.707 7.707a1 1 0 01-1.414-1.414l3-3A1 1 0 0110 3z"></path>
+                                        <path d="M10 17a1 1 0 01-.707-.293l-3-3a1 1 0 011.414-1.414L10 14.586l2.293-2.293a1 1 0 011.414 1.414l-3 3A1 1 0 0110 17z"></path>
+                                    </svg>
+                                </span>
+                                <span>$${data.financialMetrics['52WeekHigh']}</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="p-3 bg-dark-2 rounded-lg">
+                        <p class="text-xs text-light-text">Key Metrics</p>
+                        <div class="grid grid-cols-2 gap-2 mt-1">
+                            <div>
+                                <p class="text-xs text-light-text">P/E Ratio</p>
+                                <p class="font-medium">${data.financialMetrics.peRatio}</p>
+                            </div>
+                            <div>
+                                <p class="text-xs text-light-text">EPS</p>
+                                <p class="font-medium">$${data.financialMetrics.earningsPerShare}</p>
+                            </div>
+                            <div>
+                                <p class="text-xs text-light-text">Dividend</p>
+                                <p class="font-medium">${data.financialMetrics.dividendYield}%</p>
+                            </div>
+                            <div>
+                                <p class="text-xs text-light-text">Market Cap</p>
+                                <p class="font-medium">${data.marketCap}</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="p-3 bg-dark-2 rounded-lg">
+                        <p class="text-xs text-light-text mb-1">Analyst Ratings</p>
+                        <div class="flex items-center space-x-2 mt-2">
+                            <div class="h-4 bg-green-500 rounded" style="width: ${(data.analystRatings.buy / (data.analystRatings.buy + data.analystRatings.hold + data.analystRatings.sell) * 100)}%"></div>
+                            <div class="h-4 bg-yellow-500 rounded" style="width: ${(data.analystRatings.hold / (data.analystRatings.buy + data.analystRatings.hold + data.analystRatings.sell) * 100)}%"></div>
+                            <div class="h-4 bg-red-500 rounded" style="width: ${(data.analystRatings.sell / (data.analystRatings.buy + data.analystRatings.hold + data.analystRatings.sell) * 100)}%"></div>
+                        </div>
+                        <div class="flex justify-between text-xs mt-1">
+                            <span class="text-green-500">Buy (${data.analystRatings.buy})</span>
+                            <span class="text-yellow-500">Hold (${data.analystRatings.hold})</span>
+                            <span class="text-red-500">Sell (${data.analystRatings.sell})</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="p-4 border-t border-white/5">
+                    <h3 class="text-sm font-semibold mb-2">Latest News</h3>
+                    <div class="space-y-2">
+                        ${data.news.slice(0, 2).map(item => `
+                            <div class="bg-dark-2 p-2 rounded-lg">
+                                <p class="text-sm font-medium">${item.headline}</p>
+                                <div class="flex justify-between items-center mt-1">
+                                    <span class="text-xs text-light-text">${item.date}</span>
+                                    <a href="${item.url}" target="_blank" class="text-xs text-primary hover:underline">Read More</a>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+                
+                <div class="p-4 border-t border-white/5">
+                    <h3 class="text-sm font-semibold mb-2">Upcoming Events</h3>
+                    ${data.upcomingEarnings.date ? `
+                        <div class="bg-dark-2 p-2 rounded-lg mb-2">
+                            <div class="flex justify-between">
+                                <p class="text-sm">Earnings Report</p>
+                                <p class="text-xs text-primary">${data.upcomingEarnings.date}</p>
+                            </div>
+                            <p class="text-xs text-light-text">Est. EPS: $${data.upcomingEarnings.estimatedEarnings}</p>
+                        </div>
+                    ` : ''}
+                    
+                    ${data.upcomingEvents && data.upcomingEvents.length > 0 ? `
+                        ${data.upcomingEvents.slice(0, 1).map(event => `
+                            <div class="bg-dark-2 p-2 rounded-lg">
+                                <div class="flex justify-between">
+                                    <p class="text-sm">${event.eventName}</p>
+                                    <p class="text-xs text-primary">${event.date}</p>
+                                </div>
+                                <p class="text-xs text-light-text">${event.impact}</p>
+                            </div>
+                        `).join('')}
+                    ` : ''}
+                </div>
+            </div>
+            `;
+        }
+        
+        // Function to add a user message to the chat
+        function addUserMessage(message) {
+            const messageDiv = document.createElement('div');
+            messageDiv.classList.add('message-container', 'message-in');
+            messageDiv.dataset.delay = '0';
+            
+            messageDiv.innerHTML = `
+                <div class="flex space-x-4 justify-end">
+                    <div class="flex-1 max-w-[85%]">
+                        <div class="bg-secondary/20 p-4 rounded-2xl rounded-tr-none shadow-lg border border-secondary/30 text-white">
+                            ${message}
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            chatContainer.querySelector('.max-w-4xl').appendChild(messageDiv);
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+        }
+        
+        // Function to add a bot message to the chat
+        function addBotMessage(message, suggestion = null) {
+            removeTypingIndicator();
+            
+            const messageDiv = document.createElement('div');
+            messageDiv.classList.add('message-container', 'message-in');
+            messageDiv.dataset.delay = '0';
+            
+            // Format the message content (handle code blocks, etc.)
+            const formattedMessage = formatCodeBlocks(message);
+            
+            messageDiv.innerHTML = `
+                <div class="flex space-x-4">
+                    <div class="w-9 h-9 rounded-full bg-gradient-to-br from-primary to-primary-dark flex items-center justify-center">
+                        <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 3.104v5.714a2.252 2.252 0 01-.659 1.591L5 14.5M9.75 3.104c-.251.023-.501.05-.75.082m.75-.082a24.301 24.301 0 014.5 0m0 0v5.714c0 .597.237 1.17.659 1.591L19.8 15.3M14.25 3.104c.251.023.501.05.75.082M19.8 15.3l-1.57.393A9.065 9.065 0 0112 15a9.065 9.065 0 00-6.23-.693L5 14.5m14.8.8l1.402 1.402c1.232 1.232.65 3.318-1.067 3.611A48.309 48.309 0 0112 21c-2.773 0-5.491-.235-8.135-.687-1.718-.293-2.3-2.379-1.067-3.61L5 14.5"></path>
+                        </svg>
+                    </div>
+                    <div class="flex-1">
+                        <div class="bg-dark-2 p-4 rounded-2xl rounded-tl-none shadow-lg border border-white/5">
+                            ${formattedMessage}
+                        </div>
+                        
+                        ${suggestion ? `
+                            <div class="mt-3 flex flex-wrap gap-2 slide-up" style="animation-delay: 0.3s">
+                                <button class="suggestion-action bg-dark-3 hover:bg-dark-2 text-light-text hover:text-white px-3 py-1.5 rounded-full text-sm transition-all duration-200 border border-white/10"
+                                    data-action='${JSON.stringify(suggestion.action)}'>
+                                    ${suggestion.text}
+                                </button>
+                            </div>
+                        ` : ''}
+                    </div>
+                </div>
+            `;
+            
+            chatContainer.querySelector('.max-w-4xl').appendChild(messageDiv);
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+            
+            // Add event listeners to any copy buttons in code blocks
+            const copyButtons = messageDiv.querySelectorAll('.copy-btn');
+            copyButtons.forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const codeBlock = this.closest('div.bg-[#282c34]').querySelector('code');
+                    const textToCopy = codeBlock.textContent;
+                    
+                    navigator.clipboard.writeText(textToCopy).then(() => {
+                        const originalText = this.innerHTML;
+                        this.innerHTML = `
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                            </svg>
+                            <span>Copied!</span>
+                        `;
+                        
+                        setTimeout(() => {
+                            this.innerHTML = originalText;
+                        }, 2000);
+                    });
+                });
+            });
+            
+            // Add event listeners to suggestion action buttons
+            if (suggestion) {
+                const suggestionBtn = messageDiv.querySelector('.suggestion-action');
+                suggestionBtn.addEventListener('click', function() {
+                    const action = JSON.parse(this.dataset.action);
+                    handleSuggestionAction(action, suggestion.text);
+                });
+            }
+            
+            isTyping = false;
+        }
+        
+        // Function to handle suggestion actions
+        function handleSuggestionAction(action, text) {
+            if (action.type === 'stock_data') {
+                // Create a typing indicator
+                showTypingIndicator();
+                
+                // Make request to get stock data
+                fetch(`/api/request/gemini?company_name=${encodeURIComponent(action.company)}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        // Remove typing indicator
+                        removeTypingIndicator();
+                        
+                        // Create a message div for the stock card
+                        const messageDiv = document.createElement('div');
+                        messageDiv.classList.add('message-container', 'message-in');
+                        messageDiv.dataset.delay = '0';
+                        
+                        messageDiv.innerHTML = `
+                            <div class="flex space-x-4">
+                                <div class="w-9 h-9 rounded-full bg-gradient-to-br from-primary to-primary-dark flex items-center justify-center">
+                                    <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 3.104v5.714a2.252 2.252 0 01-.659 1.591L5 14.5M9.75 3.104c-.251.023-.501.05-.75.082m.75-.082a24.301 24.301 0 014.5 0m0 0v5.714c0 .597.237 1.17.659 1.591L19.8 15.3M14.25 3.104c.251.023.501.05.75.082M19.8 15.3l-1.57.393A9.065 9.065 0 0112 15a9.065 9.065 0 00-6.23-.693L5 14.5m14.8.8l1.402 1.402c1.232 1.232.65 3.318-1.067 3.611A48.309 48.309 0 0112 21c-2.773 0-5.491-.235-8.135-.687-1.718-.293-2.3-2.379-1.067-3.61L5 14.5"></path>
+                                    </svg>
+                                </div>
+                                <div class="flex-1">
+                                    <div class="bg-dark-2 p-4 rounded-2xl rounded-tl-none shadow-lg border border-white/5 mb-2">
+                                        <p>Here's the latest stock data for ${action.company}:</p>
+                                    </div>
+                                    ${createStockCard(data)}
+                                </div>
+                            </div>
+                        `;
+                        
+                        chatContainer.querySelector('.max-w-4xl').appendChild(messageDiv);
+                        chatContainer.scrollTop = chatContainer.scrollHeight;
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        addBotMessage(`I'm sorry, I couldn't retrieve the stock data for ${action.company} at this time. Please try again later.`);
+                    });
+            } else if (action.type === 'explore') {
+                // Handle explore action
+                const userMessage = `Tell me about ${action.category.replace(/_/g, ' ')}`;
+                handleUserMessage(userMessage);
+            }
+        }
+        
+        // Function to send a message and get a response
+        function sendMessage(message) {
+            if (message.trim() === '' || isTyping) return;
+            
+            // Add the user's message to the chat
+            addUserMessage(message);
+            
+            // Clear the input
+            messageInput.value = '';
+            messageInput.style.height = 'auto';
+            
+            // Show typing indicator
+            isTyping = true;
+            const typingIndicator = showTypingIndicator();
+            
+            // Send the message to server
+            fetch('/api/chat', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    message: message,
+                    chat_history_ids: chatHistory.length > 0 ? chatHistory : null
+                }),
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            })
+            .then(data => {
+                // Save the chat history
+                if (data.chat_history_ids) {
+                    chatHistory = data.chat_history_ids;
+                }
+                
+                // Add the bot's response to the chat
+                addBotMessage(data.response, data.suggestion ? {
+                    text: data.suggestion,
+                    action: data.suggestion_action
+                } : null);
+                
+                // Save current suggestion if any
+                currentSuggestion = data.suggestion_action;
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                removeTypingIndicator();
+                addBotMessage("I'm sorry, I'm having trouble connecting to the server. Please try again later.");
+                isTyping = false;
+            });
+        }
+        
+        // Handle user message (could be from input or suggestion chip)
+        function handleUserMessage(message) {
+            // We keep it simple for the demo, but in a real app,
+            // you might want to add this to a pending messages queue
+            sendMessage(message);
+        }
+        
+        // Event listeners
+        sendBtn.addEventListener('click', () => {
+            const message = messageInput.value;
+            handleUserMessage(message);
+        });
+        
+        messageInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                const message = messageInput.value;
+                handleUserMessage(message);
+            }
+        });
+        
+        // Handle suggestion chips
+        document.querySelectorAll('.suggestion-chip').forEach(chip => {
+            chip.addEventListener('click', function() {
+                const message = this.textContent.trim();
+                handleUserMessage(message);
+            });
+        });
+        
+        // Toggle sidebar on mobile
+        toggleSidebarBtn.addEventListener('click', () => {
+            sidebar.classList.toggle('-translate-x-full');
+        });
+        
+        // Logout button
+        logoutBtn.addEventListener('click', () => {
+            // In a real app, you'd want to call a logout endpoint
+            window.location.href = '/logout';
+        });
+        
+        // New chat button
+        newChatBtn.addEventListener('click', () => {
+            // Clear chat history
+            chatHistory = [];
+            
+            // Clear chat container except for the welcome message
+            const chatMessages = chatContainer.querySelectorAll('.message-container');
+            for (let i = 1; i < chatMessages.length; i++) {
+                chatMessages[i].remove();
+            }
+            
+            // On mobile, close the sidebar
+            if (window.innerWidth < 768) {
+                sidebar.classList.add('-translate-x-full');
+            }
+        });
+        
+        // Initialize highlight.js
+        document.addEventListener('DOMContentLoaded', () => {
+            hljs.highlightAll();
+            
+            // On smaller screens, hide sidebar by default
+            if (window.innerWidth < 768) {
+                sidebar.classList.add('-translate-x-full');
+            }
+        });
+    </script>
+</body>
+</html>

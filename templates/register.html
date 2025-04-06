@@ -1,0 +1,113 @@
+{% extends "base.html" %}
+
+{% block title %}Register{% endblock %}
+
+{% block content %}
+<div class="bg-white shadow-2xl rounded-2xl overflow-hidden">
+    <div class="p-8">
+        <h2 class="text-3xl font-bold text-center text-gray-800 mb-6">Create an Account</h2>
+        
+        <form method="POST" action="{{ url_for('register') }}" class="space-y-4">
+            {% if error %}
+            <div class="bg-red-50 border border-red-300 text-red-800 px-4 py-3 rounded relative" role="alert">
+                <span class="block sm:inline">{{ error }}</span>
+            </div>
+            {% endif %}
+            
+            <div>
+                <label for="username" class="block text-gray-700 font-medium mb-2">Choose a Username</label>
+                <div class="relative">
+                    <span class="absolute inset-y-0 left-0 pl-3 flex items-center">
+                        <i class="fas fa-user text-gray-400"></i>
+                    </span>
+                    <input 
+                        type="text" 
+                        id="username" 
+                        name="username" 
+                        required 
+                        minlength="3"
+                        onkeyup="validateForm()"
+                        class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                        placeholder="At least 3 characters"
+                    >
+                </div>
+            </div>
+            
+            <div>
+                <label for="password" class="block text-gray-700 font-medium mb-2">Create Password</label>
+                <div class="relative">
+                    <span class="absolute inset-y-0 left-0 pl-3 flex items-center">
+                        <i class="fas fa-lock text-gray-400"></i>
+                    </span>
+                    <input 
+                        type="password" 
+                        id="password" 
+                        name="password" 
+                        required 
+                        minlength="6"
+                        onkeyup="validateForm()"
+                        class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                        placeholder="At least 6 characters"
+                    >
+                </div>
+            </div>
+            
+            <div>
+                <label for="confirm-password" class="block text-gray-700 font-medium mb-2">Confirm Password</label>
+                <div class="relative">
+                    <span class="absolute inset-y-0 left-0 pl-3 flex items-center">
+                        <i class="fas fa-check-circle text-gray-400"></i>
+                    </span>
+                    <input 
+                        type="password" 
+                        id="confirm-password" 
+                        required 
+                        onkeyup="validateForm()"
+                        class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                        placeholder="Repeat your password"
+                    >
+                </div>
+            </div>
+            
+            <button 
+                type="submit" 
+                id="submit-btn"
+                class="w-full bg-green-600 text-white py-3 rounded-lg hover:bg-green-700 transition duration-300 opacity-50 cursor-not-allowed"
+                disabled
+            >
+                Create Account
+            </button>
+        </form>
+        
+        <div class="text-center mt-6">
+            <p class="text-gray-600">
+                Already have an account? 
+                <a href="{{ url_for('login') }}" class="text-green-600 font-medium hover:underline">
+                    Log in here
+                </a>
+            </p>
+        </div>
+    </div>
+</div>
+
+<script>
+    function validateForm() {
+        const username = document.getElementById('username');
+        const password = document.getElementById('password');
+        const confirmPassword = document.getElementById('confirm-password');
+        const submitBtn = document.getElementById('submit-btn');
+        
+        const isUsernameValid = username.value.length >= 3;
+        const isPasswordValid = password.value.length >= 6;
+        const doPasswordsMatch = password.value === confirmPassword.value;
+        
+        if (isUsernameValid && isPasswordValid && doPasswordsMatch) {
+            submitBtn.disabled = false;
+            submitBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+        } else {
+            submitBtn.disabled = true;
+            submitBtn.classList.add('opacity-50', 'cursor-not-allowed');
+        }
+    }
+</script>
+{% endblock %}

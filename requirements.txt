@@ -1,0 +1,7 @@
+Flask
+Flask-Login
+pymongo[srv]
+python-dotenv
+torch
+transformers
+google-genai
