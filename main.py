@@ -370,4 +370,4 @@ def generate_suggestion(user_message, bot_response):
     return suggestions.get(primary_topic)
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(debug=True, port=80)
