@@ -11,8 +11,18 @@ from transformers import AutoModelForCausalLM, AutoTokenizer
 import re
 
 chatbot_model_name = "microsoft/DialoGPT-medium"
+
+# Load tokenizer
 chatbot_tokenizer = AutoTokenizer.from_pretrained(chatbot_model_name)
-chatbot_model = AutoModelForCausalLM.from_pretrained(chatbot_model_name)
+
+# Load model with specific parameters to avoid the error
+chatbot_model = AutoModelForCausalLM.from_pretrained(
+    chatbot_model_name,
+    device_map="auto",  # Automatically decide device placement
+    low_cpu_mem_usage=True,  # Optimize memory usage
+    # Add this if you still encounter issues
+    torch_dtype="auto"  # Use automatic type detection
+)
 
 def generate_chat_response(user_input, chat_history_ids=None):
     new_user_input_ids = chatbot_tokenizer.encode(user_input + chatbot_tokenizer.eos_token, return_tensors="pt")
