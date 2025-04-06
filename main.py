@@ -6,8 +6,8 @@ import os
 from datetime import datetime
 import json
 from google import genai
-import torch
-from transformers import AutoModelForCausalLM, AutoTokenizer
+# import torch
+# from transformers import AutoModelForCausalLM, AutoTokenizer
 import re
 
 # chatbot_model_name = "microsoft/DialoGPT-medium"
@@ -175,9 +175,9 @@ def chat():
         except Exception as e:
             return jsonify({"error": f"Gemini API failed: {str(e)}"}), 500
 
-    # Else: Use DialoGPT for general questions
-    if chat_history_ids:
-        chat_history_ids = torch.tensor(chat_history_ids)
+    # # Else: Use DialoGPT for general questions
+    # if chat_history_ids:
+    #     chat_history_ids = torch.tensor(chat_history_ids)
 
     # response, history_ids = generate_chat_response(user_message, chat_history_ids)
     response = client.models.generate_content(
