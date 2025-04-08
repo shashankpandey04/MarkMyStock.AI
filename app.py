@@ -6,30 +6,28 @@ import os
 from datetime import datetime
 import json
 from google import genai
-# import torch
-# from transformers import AutoModelForCausalLM, AutoTokenizer
+import torch
+from transformers import AutoModelForCausalLM, AutoTokenizer
+from transformers import pipeline
 import re
 
-# chatbot_model_name = "microsoft/DialoGPT-medium"
+chatbot_model_name = "microsoft/DialoGPT-medium"
 
-# # Load tokenizer
-# chatbot_tokenizer = AutoTokenizer.from_pretrained(chatbot_model_name)
+chatbot_tokenizer = AutoTokenizer.from_pretrained(chatbot_model_name)
 
-# # Load model with specific parameters to avoid the error
-# chatbot_model = AutoModelForCausalLM.from_pretrained(
-#     chatbot_model_name,
-#     device_map="auto",  # Automatically decide device placement
-#     low_cpu_mem_usage=True,  # Optimize memory usage
-#     # Add this if you still encounter issues
-#     torch_dtype="auto"  # Use automatic type detection
-# )
+chatbot_model = AutoModelForCausalLM.from_pretrained(
+    chatbot_model_name,
+    device_map="auto",
+    low_cpu_mem_usage=True,
+    torch_dtype="auto"
+)
 
-# def generate_chat_response(user_input, chat_history_ids=None):
-#     new_user_input_ids = chatbot_tokenizer.encode(user_input + chatbot_tokenizer.eos_token, return_tensors="pt")
-#     bot_input_ids = new_user_input_ids if chat_history_ids is None else torch.cat([chat_history_ids, new_user_input_ids], dim=-1)
-#     chat_history_ids = chatbot_model.generate(bot_input_ids, max_length=1000, pad_token_id=chatbot_tokenizer.eos_token_id)
-#     output = chatbot_tokenizer.decode(chat_history_ids[:, bot_input_ids.shape[-1]:][0], skip_special_tokens=True)
-#     return output, chat_history_ids
+def generate_chat_response(user_input, chat_history_ids=None):
+    new_user_input_ids = chatbot_tokenizer.encode(user_input + chatbot_tokenizer.eos_token, return_tensors="pt")
+    bot_input_ids = new_user_input_ids if chat_history_ids is None else torch.cat([chat_history_ids, new_user_input_ids], dim=-1)
+    chat_history_ids = chatbot_model.generate(bot_input_ids, max_length=1000, pad_token_id=chatbot_tokenizer.eos_token_id)
+    output = chatbot_tokenizer.decode(chat_history_ids[:, bot_input_ids.shape[-1]:][0], skip_special_tokens=True)
+    return output, chat_history_ids
 
 load_dotenv()
 
@@ -55,7 +53,35 @@ class User(UserMixin):
 
     def get_id(self):
         return self.id
+
+
+def summarize_text(text, max_length=150, min_length=40):
+    """
+    Summarize the given text using a pre-trained model from Hugging Face.
+    
+    Args:
+        text (str): The text to summarize
+        max_length (int): Maximum length of the summary
+        min_length (int): Minimum length of the summary
         
+    Returns:
+        str: The summarized text
+    """
+    model_name = "facebook/bart-large-cnn"
+    summarizer = pipeline(
+        "summarization", 
+        model=model_name,
+        tokenizer=model_name
+    )
+    summary = summarizer(
+        text,
+        max_length=max_length,
+        min_length=min_length,
+        do_sample=False
+    )
+
+    return summary[0]['summary_text']
+
 @login_manager.user_loader
 def load_user(user_id):
     return User(user_id)
@@ -120,28 +146,22 @@ def chat():
     is_stock_related = any(keyword in user_message.lower() for keyword in stock_keywords)
 
     if is_stock_related:
-        # Improved company name extraction
-        # First check for simple patterns like "Show me [Company] stock"
         company_match = re.search(r"(?:show me|get|display|find|lookup)\s+([A-Za-z\s]+)(?:\s+stock|\s+price|\s+shares|\s+company)?", user_message, re.IGNORECASE)
-        
-        # If not found, check for other patterns
         if not company_match:
             company_match = re.search(r"(?:about|for|on)\s+([A-Za-z\s]+)(?:\s+stock|\s+price|\s+shares|\s+company)?", user_message, re.IGNORECASE)
-        
-        # If still not found, look for any capitalized words that might be company names
+
         if not company_match:
             words = re.findall(r'\b[A-Z][a-z]+\b', user_message)
             company_name = ' '.join(words) if words else None
         else:
             company_name = company_match.group(1).strip()
-            
-        # Fallback if no company detected
         if not company_name:
             return jsonify({
                 "response": "I'd be happy to provide stock information. Could you specify which company you're interested in?",
                 "chat_history_ids": None
             })
-
+        current_year = datetime.now().year
+        current_date = datetime.now().date()
         prompt = f"You are a financial assistant.\n" \
              f"Provide precise and concise stock information for {company_name}:\n" \
              f"- Current price\n" \
@@ -163,7 +183,7 @@ def chat():
                 return jsonify({
                     "response": reply_text,
                     "chat_history_ids": None,
-                    "suggestion": f"Want full data report on {company_name}?",
+                    "suggestion": f"Want a detailed report on {company_name}?",
                     "suggestion_action": {
                         "type": "stock_data",
                         "company": company_name
@@ -176,20 +196,22 @@ def chat():
             return jsonify({"error": f"Gemini API failed: {str(e)}"}), 500
 
     # # Else: Use DialoGPT for general questions
-    # if chat_history_ids:
-    #     chat_history_ids = torch.tensor(chat_history_ids)
+    #if chat_history_ids:
+    #    chat_history_ids = torch.tensor(chat_history_ids)
 
-    # response, history_ids = generate_chat_response(user_message, chat_history_ids)
     response = client.models.generate_content(
         model="gemini-2.0-flash",
         contents=[{"role": "user", "parts": [{"text": user_message}]}]
     )
-    if not response:
+    
+    if not response or not response.candidates:
         return jsonify({"error": "No response from the model"}), 500
+    
+    response_text = response.candidates[0].content.parts[0].text.strip() if response.candidates[0].content.parts else ""
     suggestion = generate_suggestion(user_message, response)
-
+    
     return jsonify({
-        "response": response,
+        "response": response_text,
         "chat_history_ids": None,
         "suggestion": suggestion["text"] if suggestion else None,
         "suggestion_action": suggestion["action"] if suggestion else None
@@ -330,9 +352,9 @@ def generate_suggestion(user_message, bot_response):
         "finance": ["money", "investment", "budget", "finance", "saving", "stock", "market"]
     }
     
-    # Detect topics in conversation
     detected_topics = []
-    combined_text = (user_message + " " + bot_response).lower()
+    bot_response_text = bot_response.candidates[0].content.parts[0].text.strip() if bot_response and bot_response.candidates else ""
+    combined_text = (user_message + " " + bot_response_text).lower()
     
     for topic, keywords in topics.items():
         if any(keyword in combined_text for keyword in keywords):
@@ -369,5 +391,12 @@ def generate_suggestion(user_message, bot_response):
     
     return suggestions.get(primary_topic)
 
+@app.route("/features")
+def features():
+    return render_template("features.html")
+
 def run():
-    app.run(debug=False, port=80)
+    app.run(debug=True, port=80)
+
+if __name__ == "__main__":
+    run()

@@ -169,8 +169,15 @@
                     <h1 class="text-lg font-bold tracking-tight">MarkMyStock.AI</h1>
                 </div>
             </div>
-            
-            <!-- New Chat Button -->
+
+            <div class="p-4">
+                <a href="/">
+                    <button id="new-chat-btn" class="w-full bg-primary hover:bg-primary-dark text-white p-2 rounded-lg flex items-center justify-center space-x-2 transition-colors duration-200">
+                        <span>Home</span>
+                    </button>
+                </a>
+            </div>
+
             <div class="p-4">
                 <button id="new-chat-btn" class="w-full bg-primary hover:bg-primary-dark text-white p-2 rounded-lg flex items-center justify-center space-x-2 transition-colors duration-200">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -178,6 +185,14 @@
                     </svg>
                     <span>New Chat</span>
                 </button>
+            </div>
+
+            <div class="p-4">
+                <a href="/logout">
+                    <button id="new-chat-btn" class="w-full bg-primary hover:bg-primary-dark text-white p-2 rounded-lg flex items-center justify-center space-x-2 transition-colors duration-200">
+                        <span>Logout</span>
+                    </button>
+                </a>
             </div>
             
             <!-- Chat History -->
@@ -557,78 +572,184 @@
             chatContainer.scrollTop = chatContainer.scrollHeight;
         }
         
-        // Function to add a bot message to the chat
-        function addBotMessage(message, suggestion = null) {
-            removeTypingIndicator();
-            
-            const messageDiv = document.createElement('div');
-            messageDiv.classList.add('message-container', 'message-in');
-            messageDiv.dataset.delay = '0';
-            
-            // Format the message content (handle code blocks, etc.)
-            const formattedMessage = formatCodeBlocks(message);
-            
-            messageDiv.innerHTML = `
-                <div class="flex space-x-4">
-                    <div class="w-9 h-9 rounded-full bg-gradient-to-br from-primary to-primary-dark flex items-center justify-center">
-                        <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 3.104v5.714a2.252 2.252 0 01-.659 1.591L5 14.5M9.75 3.104c-.251.023-.501.05-.75.082m.75-.082a24.301 24.301 0 014.5 0m0 0v5.714c0 .597.237 1.17.659 1.591L19.8 15.3M14.25 3.104c.251.023.501.05.75.082M19.8 15.3l-1.57.393A9.065 9.065 0 0112 15a9.065 9.065 0 00-6.23-.693L5 14.5m14.8.8l1.402 1.402c1.232 1.232.65 3.318-1.067 3.611A48.309 48.309 0 0112 21c-2.773 0-5.491-.235-8.135-.687-1.718-.293-2.3-2.379-1.067-3.61L5 14.5"></path>
-                        </svg>
-                    </div>
-                    <div class="flex-1">
-                        <div class="bg-dark-2 p-4 rounded-2xl rounded-tl-none shadow-lg border border-white/5">
-                            ${formattedMessage}
+        // Modify the addBotMessage function to include a speak button
+function addBotMessage(message, suggestion = null) {
+    removeTypingIndicator();
+    
+    const messageDiv = document.createElement('div');
+    messageDiv.classList.add('message-container', 'message-in');
+    messageDiv.dataset.delay = '0';
+    
+    // Format the message content (handle code blocks, etc.)
+    const formattedMessage = formatCodeBlocks(message);
+    
+    // Store the plain text version for speech
+    const plainTextMessage = message.replace(/```[\s\S]*?```/g, 'Code block omitted for speech');
+    
+    messageDiv.innerHTML = `
+        <div class="flex space-x-4">
+            <div class="w-9 h-9 rounded-full bg-gradient-to-br from-primary to-primary-dark flex items-center justify-center">
+                <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 3.104v5.714a2.252 2.252 0 01-.659 1.591L5 14.5M9.75 3.104c-.251.023-.501.05-.75.082m.75-.082a24.301 24.301 0 014.5 0m0 0v5.714c0 .597.237 1.17.659 1.591L19.8 15.3M14.25 3.104c.251.023.501.05.75.082M19.8 15.3l-1.57.393A9.065 9.065 0 0112 15a9.065 9.065 0 00-6.23-.693L5 14.5m14.8.8l1.402 1.402c1.232 1.232.65 3.318-1.067 3.611A48.309 48.309 0 0112 21c-2.773 0-5.491-.235-8.135-.687-1.718-.293-2.3-2.379-1.067-3.61L5 14.5"></path>
+                </svg>
+            </div>
+            <div class="flex-1">
+                <div class="bg-dark-2 p-4 rounded-2xl rounded-tl-none shadow-lg border border-white/5">
+                    <div class="flex justify-between items-start">
+                        <div class="flex-1">
+                            ${formattedMessage.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').replace(/\n/g, '<br>')}
                         </div>
-                        
-                        ${suggestion ? `
-                            <div class="mt-3 flex flex-wrap gap-2 slide-up" style="animation-delay: 0.3s">
-                                <button class="suggestion-action bg-dark-3 hover:bg-dark-2 text-light-text hover:text-white px-3 py-1.5 rounded-full text-sm transition-all duration-200 border border-white/10"
-                                    data-action='${JSON.stringify(suggestion.action)}'>
-                                    ${suggestion.text}
-                                </button>
-                            </div>
-                        ` : ''}
+                        <button class="speak-btn ml-2 p-1.5 text-light-text hover:text-primary rounded-lg hover:bg-white/5 transition-colors flex-shrink-0" data-message="${encodeURIComponent(plainTextMessage.replace(/\*\*(.*?)\*\*/g, '$1').replace(/\n/g, ' '))}">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.114 5.636a9 9 0 010 12.728M16.463 8.288a5.25 5.25 0 010 7.424M6.75 8.25l4.72-4.72a.75.75 0 011.28.53v15.88a.75.75 0 01-1.28.53l-4.72-4.72H4.51c-.88 0-1.704-.507-1.938-1.354A9.01 9.01 0 012.25 12c0-.83.112-1.633.322-2.396C2.806 8.756 3.63 8.25 4.51 8.25H6.75z"></path>
+                            </svg>
+                        </button>
                     </div>
                 </div>
-            `;
+                
+                ${suggestion ? `
+                    <div class="mt-3 flex flex-wrap gap-2 slide-up" style="animation-delay: 0.3s">
+                        <button class="suggestion-action bg-dark-3 hover:bg-dark-2 text-light-text hover:text-white px-3 py-1.5 rounded-full text-sm transition-all duration-200 border border-white/10"
+                            data-action='${JSON.stringify(suggestion.action)}'>
+                            ${suggestion.text}
+                        </button>
+                    </div>
+                ` : ''}
+            </div>
+        </div>
+    `;
+    
+    chatContainer.querySelector('.max-w-4xl').appendChild(messageDiv);
+    chatContainer.scrollTop = chatContainer.scrollHeight;
+    
+    // Add event listeners to any copy buttons in code blocks
+    const copyButtons = messageDiv.querySelectorAll('.copy-btn');
+    copyButtons.forEach(btn => {
+        btn.addEventListener('click', function() {
+            const codeBlock = this.closest('div.bg-[#282c34]').querySelector('code');
+            const textToCopy = codeBlock.textContent;
             
-            chatContainer.querySelector('.max-w-4xl').appendChild(messageDiv);
-            chatContainer.scrollTop = chatContainer.scrollHeight;
-            
-            // Add event listeners to any copy buttons in code blocks
-            const copyButtons = messageDiv.querySelectorAll('.copy-btn');
-            copyButtons.forEach(btn => {
-                btn.addEventListener('click', function() {
-                    const codeBlock = this.closest('div.bg-[#282c34]').querySelector('code');
-                    const textToCopy = codeBlock.textContent;
-                    
-                    navigator.clipboard.writeText(textToCopy).then(() => {
-                        const originalText = this.innerHTML;
-                        this.innerHTML = `
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-                            </svg>
-                            <span>Copied!</span>
-                        `;
-                        
-                        setTimeout(() => {
-                            this.innerHTML = originalText;
-                        }, 2000);
-                    });
-                });
+            navigator.clipboard.writeText(textToCopy).then(() => {
+                const originalText = this.innerHTML;
+                this.innerHTML = `
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                    </svg>
+                    <span>Copied!</span>
+                `;
+                
+                setTimeout(() => {
+                    this.innerHTML = originalText;
+                }, 2000);
             });
-            
-            // Add event listeners to suggestion action buttons
-            if (suggestion) {
-                const suggestionBtn = messageDiv.querySelector('.suggestion-action');
-                suggestionBtn.addEventListener('click', function() {
-                    const action = JSON.parse(this.dataset.action);
-                    handleSuggestionAction(action, suggestion.text);
-                });
-            }
-            
-            isTyping = false;
+        });
+    });
+    
+    // Add event listeners to speak buttons
+    const speakButton = messageDiv.querySelector('.speak-btn');
+    speakButton.addEventListener('click', function() {
+        const messageText = decodeURIComponent(this.dataset.message);
+        speakText(messageText, this);
+    });
+    
+    // Add event listeners to suggestion action buttons
+    if (suggestion) {
+        const suggestionBtn = messageDiv.querySelector('.suggestion-action');
+        suggestionBtn.addEventListener('click', function() {
+            const action = JSON.parse(this.dataset.action);
+            handleSuggestionAction(action, suggestion.text);
+        });
+    }
+    
+    isTyping = false;
+}
+
+// Add this function to handle text-to-speech
+let currentlySpeaking = false;
+let speechSynthesis = window.speechSynthesis;
+function speakText(text, buttonElement) {
+    // If already speaking, stop it
+    if (currentlySpeaking) {
+        speechSynthesis.cancel();
+        currentlySpeaking = false;
+        
+        // Reset all speak buttons
+        document.querySelectorAll('.speak-btn').forEach(btn => {
+            btn.innerHTML = `
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.114 5.636a9 9 0 010 12.728M16.463 8.288a5.25 5.25 0 010 7.424M6.75 8.25l4.72-4.72a.75.75 0 011.28.53v15.88a.75.75 0 01-1.28.53l-4.72-4.72H4.51c-.88 0-1.704-.507-1.938-1.354A9.01 9.01 0 012.25 12c0-.83.112-1.633.322-2.396C2.806 8.756 3.63 8.25 4.51 8.25H6.75z"></path>
+                </svg>
+            `;
+        });
+        
+        // If the button that was clicked is the one that was speaking, we're done
+        if (buttonElement === document.activeButton) {
+            document.activeButton = null;
+            return;
         }
+    }
+    
+    // Clean the text - remove markdown and other formatting
+    text = text.replace(/\*\*(.*?)\*\*/g, '$1'); // Remove bold
+    text = text.replace(/\*(.*?)\*/g, '$1');     // Remove italic
+    text = text.replace(/\[(.*?)\]\((.*?)\)/g, '$1'); // Remove links
+    text = text.replace(/#{1,6}\s(.*?)(?:\n|$)/g, '$1. '); // Replace headers with text and period
+    
+    // Create a speech synthesis utterance
+    const utterance = new SpeechSynthesisUtterance(text);
+    
+    // Set properties for the utterance
+    utterance.rate = 1.0;  // Speech rate
+    utterance.pitch = 1.0; // Speech pitch
+    utterance.volume = 1.0; // Speech volume
+    
+    // When speech starts
+    utterance.onstart = () => {
+        currentlySpeaking = true;
+        document.activeButton = buttonElement;
+        buttonElement.innerHTML = `
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 10a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1v-4z"></path>
+            </svg>
+        `;
+        
+        // Add a pulsing effect to the button
+        buttonElement.classList.add('animate-pulse');
+    };
+    
+    // When speech ends
+    utterance.onend = () => {
+        currentlySpeaking = false;
+        if (document.activeButton) {
+            document.activeButton.innerHTML = `
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.114 5.636a9 9 0 010 12.728M16.463 8.288a5.25 5.25 0 010 7.424M6.75 8.25l4.72-4.72a.75.75 0 011.28.53v15.88a.75.75 0 01-1.28.53l-4.72-4.72H4.51c-.88 0-1.704-.507-1.938-1.354A9.01 9.01 0 012.25 12c0-.83.112-1.633.322-2.396C2.806 8.756 3.63 8.25 4.51 8.25H6.75z"></path>
+                </svg>
+            `;
+            document.activeButton.classList.remove('animate-pulse');
+            document.activeButton = null;
+        }
+    };
+    
+    // On error
+    utterance.onerror = (event) => {
+        console.error('Speech synthesis error:', event);
+        currentlySpeaking = false;
+        if (document.activeButton) {
+            document.activeButton.innerHTML = `
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.114 5.636a9 9 0 010 12.728M16.463 8.288a5.25 5.25 0 010 7.424M6.75 8.25l4.72-4.72a.75.75 0 011.28.53v15.88a.75.75 0 01-1.28.53l-4.72-4.72H4.51c-.88 0-1.704-.507-1.938-1.354A9.01 9.01 0 012.25 12c0-.83.112-1.633.322-2.396C2.806 8.756 3.63 8.25 4.51 8.25H6.75z"></path>
+                </svg>
+            `;
+            document.activeButton.classList.remove('animate-pulse');
+            document.activeButton = null;
+        }
+    };
+
+    // Speak
+    speechSynthesis.speak(utterance);
+}
         
         // Function to handle suggestion actions
         function handleSuggestionAction(action, text) {
@@ -648,6 +769,8 @@
                         messageDiv.classList.add('message-container', 'message-in');
                         messageDiv.dataset.delay = '0';
                         
+                        const stockSummary = `Here's the latest stock data for ${action.company}. ${data.companyName} is currently trading at $${data.currentPrice}, which is ${data.priceChange.percentage >= 0 ? 'up' : 'down'} ${Math.abs(data.priceChange.percentage)}% from yesterday.`;
+
                         messageDiv.innerHTML = `
                             <div class="flex space-x-4">
                                 <div class="w-9 h-9 rounded-full bg-gradient-to-br from-primary to-primary-dark flex items-center justify-center">
@@ -657,12 +780,26 @@
                                 </div>
                                 <div class="flex-1">
                                     <div class="bg-dark-2 p-4 rounded-2xl rounded-tl-none shadow-lg border border-white/5 mb-2">
-                                        <p>Here's the latest stock data for ${action.company}:</p>
+                                        <div class="flex justify-between items-start">
+                                            <p>Here's the latest stock data for ${action.company}:</p>
+                                            <button class="speak-btn ml-2 p-1.5 text-light-text hover:text-primary rounded-lg hover:bg-white/5 transition-colors flex-shrink-0" data-message="${encodeURIComponent(stockSummary)}">
+                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.114 5.636a9 9 0 010 12.728M16.463 8.288a5.25 5.25 0 010 7.424M6.75 8.25l4.72-4.72a.75.75 0 011.28.53v15.88a.75.75 0 01-1.28.53l-4.72-4.72H4.51c-.88 0-1.704-.507-1.938-1.354A9.01 9.01 0 012.25 12c0-.83.112-1.633.322-2.396C2.806 8.756 3.63 8.25 4.51 8.25H6.75z"></path>
+                                                </svg>
+                                            </button>
+                                        </div>
                                     </div>
                                     ${createStockCard(data)}
                                 </div>
                             </div>
                         `;
+
+                        // Add the event listener to the speak button
+                        const speakButton = messageDiv.querySelector('.speak-btn');
+                        speakButton.addEventListener('click', function() {
+                            const messageText = decodeURIComponent(this.dataset.message);
+                            speakText(messageText, this);
+                        });
                         
                         chatContainer.querySelector('.max-w-4xl').appendChild(messageDiv);
                         chatContainer.scrollTop = chatContainer.scrollHeight;

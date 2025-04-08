@@ -17,9 +17,12 @@
             </div>
             <div class="flex space-x-6">
                 <a href="/" class="text-gray-300 hover:text-white transition-colors">Features</a>
-                <a href="/" class="text-gray-300 hover:text-white transition-colors">Pricing</a>
-                <a href="/" class="text-gray-300 hover:text-white transition-colors">About</a>
-                <a href="/chat" class="bg-gradient-to-r from-blue-500 to-purple-600 px-4 py-2 rounded-full hover:scale-105 transition-transform">Login</a>
+                <a href="/features" class="text-gray-300 hover:text-white transition-colors">Pricing</a>
+                {% if current_user.is_authenticated %}
+                    <a href="/chat" class="text-gray-300 hover:text-white transition-colors">Chat Now!</a>
+                {% else %}
+                    <a href="/login" class="text-gray-300 hover:text-white transition-colors">Login</a>
+                {% endif %}
             </div>
         </div>
     </nav>
@@ -72,6 +75,35 @@
             </div>
         </div>
     </main>
+
+    <section class="py-12 px-4 max-w-7xl mx-auto">
+        <div class="text-center mb-12">
+            <h2 class="text-3xl font-bold text-white mb-2">Meet Our Team</h2>
+            <p class="text-white max-w-2xl mx-auto">
+                Made By
+            </p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-8">
+            <div class="bg-white rounded-lg shadow-md overflow-hidden transition-transform duration-300 hover:transform hover:scale-105">
+                <div class="p-6">
+                    <h3 class="text-xl font-semibold text-gray-800">Shashank Pandey</h3>
+                    <p class="text-blue-600 font-medium mb-3">12317758</p>
+                    <p class="text-gray-600 mb-4">B.Tech CSE | K23SF | 50</p>
+                </div>
+            </div>
+            
+            <!-- Team Member 2 -->
+            <div class="bg-white rounded-lg shadow-md overflow-hidden transition-transform duration-300 hover:transform hover:scale-105">
+                <div class="p-6">
+                    <h3 class="text-xl font-semibold text-gray-800">Ujjwal Singh</h3>
+                    <p class="text-blue-600 font-medium mb-3">12317185</p>
+                    <p class="text-gray-600 mb-4">B.Tech CSE | K23SF | 52</p>
+                </div>
+            </div>
+        </div>
+
+    </section>
 
     <footer class="py-8 text-center text-gray-400 text-sm">
         <p>© 2025 MarkMyStock.AI. All Rights Reserved.</p>
