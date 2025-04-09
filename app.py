@@ -328,7 +328,7 @@ def request_stock_data():
         if response and response.candidates:
             response_text = response.candidates[0].content.parts[0].text.strip()
             if response_text.startswith("```json"):
-                response_text = response_text[7:-3].strip()  # Remove ```json wrapper
+                response_text = response_text[7:-3].strip()
             stock_data = json.loads(response_text)
             return jsonify(stock_data)
         else:
@@ -343,7 +343,6 @@ def request_stock_data():
 
 def generate_suggestion(user_message, bot_response):
     """Generate contextual suggestions based on conversation"""
-    # Define topic patterns to recognize
     topics = {
         "travel": ["vacation", "trip", "travel", "flight", "hotel", "destination"],
         "food": ["recipe", "restaurant", "cooking", "meal", "food", "dish", "cuisine"],
@@ -362,8 +361,7 @@ def generate_suggestion(user_message, bot_response):
     
     if not detected_topics:
         return None
-    
-    # Generate relevant suggestion based on topic
+
     primary_topic = detected_topics[0]
     
     suggestions = {
